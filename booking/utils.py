@@ -3,7 +3,7 @@ from .enums import BookingStages
 
 
 # Пытаемся узнать из базы этап пользователя
-def get_current_state(user_id):
+def get_current_stage(user_id):
     try:
         return Profile.objects.get(external_id=user_id).stage
     except Profile.DoesNotExist:
@@ -11,7 +11,7 @@ def get_current_state(user_id):
 
 
 # Сохраняем текущий этап пользователя
-def set_state(user_id, value):
+def set_stage(user_id, value):
     try:
         Profile.objects.update_or_create(
             external_id=user_id,
