@@ -4,6 +4,8 @@ from telebot import types
 from chatbot.settings import TELEGRAM_TOKEN
 from booking.models import Profile, Reservation
 import datetime
+from booking.utils import get_current_state, set_state
+from booking.enums import BookingStages
 
 
 def booking():
@@ -13,36 +15,53 @@ def booking():
     bot = telebot.TeleBot(TELEGRAM_TOKEN)
     print(bot.get_me())
 
-    @bot.message_handler(content_types=['text'])
-    def start(message):
+    @bot.message_handler(func=lambda message: get_current_state(
+        message.chat.id) == BookingStages.START.value)
+    def text_start(message):
+        bot.send_message(message.chat.id, "Для бронирования введите /start")
+        set_state(message.chat.id, BookingStages.COUNT.value)
+
+    @bot.message_handler(commands=["start"])
+    def cmd_start(message):
         profile = Profile.objects.get_or_create(
             external_id=message.chat.id,
             defaults={
                 'name': message.from_user.username
             }
         )[0]
-        if message.text == '/book':
-            reservation = Reservation(profile=profile)
-            reservation_dict[message.chat.id] = reservation
-            bot.send_message(
-                message.from_user.id, "Введите количество гостей.")
-            bot.register_next_step_handler(message, get_count)
+        reservation = Reservation(profile=profile)
+        reservation_dict[message.chat.id] = reservation
+        state = get_current_state(message.chat.id)
+        if state == BookingStages.COUNT.value:
+            bot.send_message(message.chat.id, "Введите количество гостей.")
+        elif state == BookingStages.TIME.value:
+            bot.send_message(message.chat.id, "Введите время в формате 00:00.")
         else:
             bot.send_message(
-                message.from_user.id, 'Для бронирования введите /book.')
+                message.chat.id,
+                "Привет, чтобы сделать заказ введите количество гостей!")
+            set_state(message.chat.id, BookingStages.COUNT.value)
 
+    @bot.message_handler(commands=["reset"])
+    def cmd_reset(message):
+        bot.send_message(
+            message.chat.id, "Начнем по новой, введите количество гостей.")
+        set_state(message.chat.id, BookingStages.COUNT.value)
+
+    @bot.message_handler(func=lambda message: get_current_state(
+        message.chat.id) == BookingStages.COUNT.value)
     def get_count(message):
         if message.text.isnumeric():
-            reservation = reservation_dict[message.from_user.id]
+            reservation = reservation_dict[message.chat.id]
             reservation.count = int(message.text)
-            bot.send_message(
-                message.from_user.id, 'Введите время в формате 00:00.')
-            bot.register_next_step_handler(message, get_time)
+            bot.send_message(message.chat.id, "Введите время в формате 00:00.")
+            set_state(message.chat.id, BookingStages.TIME.value)
         else:
             bot.send_message(
-                message.from_user.id, 'Цифрами, пожалуйста.')
-            bot.register_next_step_handler(message, get_count)
+                message.chat.id, 'Цифрами, пожалуйста.')
 
+    @bot.message_handler(func=lambda message: get_current_state(
+        message.chat.id) == BookingStages.TIME.value)
     def get_time(message):
         try:
             date = datetime.datetime.now().date()
@@ -59,12 +78,12 @@ def booking():
             keyboard.add(key_no)
             question = 'Подтвердить бронирование?'
             bot.send_message(
-                message.from_user.id, text=question, reply_markup=keyboard)
+                message.chat.id, text=question, reply_markup=keyboard)
+            set_state(message.chat.id, BookingStages.START.value)
         except ValueError:
             bot.send_message(
-                message.from_user.id,
+                message.chat.id,
                 'Некорректная дата, пожалуйста, введите в формате 00:00.')
-            bot.register_next_step_handler(message, get_time)
 
     @bot.callback_query_handler(func=lambda call: True)
     def callback_worker(call):
@@ -73,14 +92,11 @@ def booking():
             reservation.save()
             bot.send_message(
                 call.message.chat.id,
-                'Поздравляю! Место успешно забронировано!')
+                'Место успешно забронировано!')
         elif call.data == "no":
             bot.send_message(
                 call.message.chat.id, 'Будем ждать Вас в другой раз!')
-        bot.edit_message_text(
-            chat_id=call.message.chat.id,
-            message_id=call.message.message_id,
-            text="Текст кнопки", reply_markup=None)
+        bot.delete_message(call.message.chat.id, call.message.message_id)
 
     bot.polling(none_stop=True, interval=0)
 

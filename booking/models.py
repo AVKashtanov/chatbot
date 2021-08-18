@@ -1,4 +1,5 @@
 from django.db import models
+from .enums import BookingStages
 
 
 class Profile(models.Model):
@@ -8,6 +9,11 @@ class Profile(models.Model):
     )
     name = models.TextField(
         verbose_name='Имя пользователя'
+    )
+    stage = models.SmallIntegerField(
+        choices=BookingStages.choices,
+        default=BookingStages.START.value,
+        verbose_name='Этап бронирования',
     )
 
     class Meta:
