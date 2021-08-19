@@ -1,5 +1,6 @@
+from re import T
 from django.db import models
-from .enums import BookingStages
+from .enums import BookingStages, SocialNetworks
 
 
 class Profile(models.Model):
@@ -14,6 +15,11 @@ class Profile(models.Model):
         choices=BookingStages.choices,
         default=BookingStages.START.value,
         verbose_name='Этап бронирования',
+    )
+    social_network = models.SmallIntegerField(
+        choices=SocialNetworks.choices,
+        verbose_name='Социальная сеть',
+        blank=True, null=True
     )
 
     class Meta:

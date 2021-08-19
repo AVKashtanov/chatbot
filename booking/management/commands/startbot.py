@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand
 import telebot
 from telebot import types
 from chatbot.settings import TELEGRAM_TOKEN
-from booking.enums import BookingStages
+from booking.enums import BookingStages, SocialNetworks
 from booking.bot import AbstractBot
 
 
@@ -89,4 +89,7 @@ class Command(BaseCommand):
     help = 'Чат-бот'
 
     def handle(self, *args, **kwargs):
-        TelegramBot(token=TELEGRAM_TOKEN)
+        TelegramBot(
+            token=TELEGRAM_TOKEN,
+            social_network=SocialNetworks.TELEGRAM.value
+        )

@@ -7,3 +7,8 @@ class BookingStages(models.IntegerChoices):
     START = 1, _('Выбор действия')
     COUNT = 2, _('Ввод количества гостей')
     TIME = 3, _('Ввод времени')
+
+
+class SocialNetworks(models.IntegerChoices):
+    """Социальные сети"""
+    TELEGRAM = 1, _('Telegram')

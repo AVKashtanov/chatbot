@@ -1,11 +1,12 @@
 from .models import Reservation, Profile
 from datetime import datetime
 from abc import ABC, abstractmethod
-from booking.enums import BookingStages
+from booking.enums import BookingStages, SocialNetworks
 
 
 class AbstractBot(ABC):
 
+    social_network = None
     profile = None
     reservation = Reservation()
 
@@ -39,7 +40,10 @@ class AbstractBot(ABC):
     def get_profile(self, user_id):
         if not isinstance(self.profile, Profile):
             self.profile = Profile.objects.get_or_create(
-                external_id=user_id
+                external_id=user_id,
+                defaults={
+                    'social_network': self.social_network
+                }
             )[0]
         return self.profile
 
@@ -76,9 +80,13 @@ class AbstractBot(ABC):
         setattr(self.reservation, fieldname, value)
 
     def __new__(cls, *args, **kwargs):
-        Profile.objects.update(stage=BookingStages.START.value)
+        social_network = kwargs.get('social_network', None)
+        if social_network:
+            Profile.objects.filter(social_network=social_network) \
+                .update(stage=BookingStages.START.value)
         instance = super().__new__(cls)
         return instance
 
     def __init__(self, *args, **kwargs):
+        self.social_network = kwargs.get('social_network', None)
         self.do_bot(**kwargs)
