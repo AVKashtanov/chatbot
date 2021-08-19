@@ -90,5 +90,4 @@ class Command(BaseCommand):
     help = 'Чат-бот'
 
     def handle(self, *args, **kwargs):
-        with TelegramBot(token=TELEGRAM_TOKEN) as bot:
-            bot
+        TelegramBot(token=TELEGRAM_TOKEN)

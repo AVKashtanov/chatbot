@@ -75,11 +75,10 @@ class AbstractBot(ABC):
     def _add_reservation_attr(self, fieldname, value):
         setattr(self.reservation, fieldname, value)
 
-    def __enter__(self):
-        return self
-
-    def __exit__(self, type, value, tb):
+    def __new__(cls, *args, **kwargs):
         Profile.objects.update(stage=BookingStages.START.value)
+        instance = super().__new__(cls)
+        return instance
 
     def __init__(self, *args, **kwargs):
         self.do_bot(**kwargs)
