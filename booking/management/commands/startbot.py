@@ -21,7 +21,6 @@ class TelegramBot(AbstractBot):
 
         @bot.message_handler(commands=["start"])
         def cmd_start(message):
-            self.save_profile(message.chat.id)
             state = self.get_current_stage(message.chat.id)
             if state == BookingStages.COUNT.value:
                 bot.send_message(message.chat.id, "Введите количество гостей.")
@@ -36,6 +35,7 @@ class TelegramBot(AbstractBot):
 
         @bot.message_handler(commands=["reset"])
         def cmd_reset(message):
+            self.save_profile(message.chat.id)
             bot.send_message(
                 message.chat.id, "Начнем по новой, введите количество гостей.")
             self.set_stage(message.chat.id, BookingStages.COUNT.value)
@@ -90,4 +90,5 @@ class Command(BaseCommand):
     help = 'Чат-бот'
 
     def handle(self, *args, **kwargs):
-        TelegramBot(token=TELEGRAM_TOKEN)
+        with TelegramBot(token=TELEGRAM_TOKEN) as bot:
+            bot

@@ -1,12 +1,15 @@
 from .models import Reservation, Profile
 from datetime import datetime
+from abc import ABC, abstractmethod
+from booking.enums import BookingStages
 
 
-class AbstractBot():
+class AbstractBot(ABC):
 
     profile = None
     reservation = Reservation()
 
+    @abstractmethod
     def do_bot(self, **kwargs):
         pass
 
@@ -71,6 +74,12 @@ class AbstractBot():
 
     def _add_reservation_attr(self, fieldname, value):
         setattr(self.reservation, fieldname, value)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, tb):
+        Profile.objects.update(stage=BookingStages.START.value)
 
     def __init__(self, *args, **kwargs):
         self.do_bot(**kwargs)
