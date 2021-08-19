@@ -7,6 +7,32 @@ class AbstractBot():
     profile = None
     reservation = Reservation()
 
+    def do_bot(self, **kwargs):
+        pass
+
+    def save_profile(self, user_id):
+        profile = self.get_profile(user_id)
+        self._add_reservation_attr('profile', profile)
+
+    def save_count(self, message):
+        if self._validate_count(message):
+            self._add_reservation_attr('count', int(message))
+            return True
+        else:
+            return False
+
+    def save_time(self, message):
+        if self._validate_time(message):
+            self._add_reservation_attr(
+                'datetime', self._calculate_date(message))
+            return True
+        else:
+            return False
+
+    def save_reservation(self):
+        self.reservation.save()
+        self.reservation = Reservation()
+
     def get_profile(self, user_id):
         if not isinstance(self.profile, Profile):
             self.profile = Profile.objects.get_or_create(
@@ -23,19 +49,19 @@ class AbstractBot():
     def get_current_stage(self, user_id):
         return self.get_profile(user_id).stage
 
-    def validate_count(self, value):
+    def _validate_count(self, value):
         if value.isnumeric():
             return True
         return False
 
-    def validate_time(self, value):
+    def _validate_time(self, value):
         try:
             datetime.strptime(value, '%H:%M')
             return True
         except ValueError:
             return False
 
-    def calculate_date(self, value):
+    def _calculate_date(self, value):
         try:
             date = datetime.now().date()
             time = datetime.strptime(value, '%H:%M').time()
@@ -43,15 +69,8 @@ class AbstractBot():
         except ValueError as e:
             raise e
 
-    def add_reservation_attr(self, fieldname, value):
+    def _add_reservation_attr(self, fieldname, value):
         setattr(self.reservation, fieldname, value)
-
-    def save_reservation(self):
-        self.reservation.save()
-        self.reservation = Reservation()
-
-    def do_bot(self, **kwargs):
-        pass
 
     def __init__(self, *args, **kwargs):
         self.do_bot(**kwargs)

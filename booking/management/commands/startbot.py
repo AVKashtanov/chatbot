@@ -14,14 +14,14 @@ class TelegramBot(AbstractBot):
         @bot.message_handler(func=lambda message: self.get_current_stage(
             message.chat.id) == BookingStages.START.value)
         def text_start(message):
+            self.save_profile(message.chat.id)
             bot.send_message(
                 message.chat.id, "Для бронирования введите /start")
             self.set_stage(message.chat.id, BookingStages.COUNT.value)
 
         @bot.message_handler(commands=["start"])
         def cmd_start(message):
-            profile = self.get_profile(message.chat.id)
-            self.add_reservation_attr('profile', profile)
+            self.save_profile(message.chat.id)
             state = self.get_current_stage(message.chat.id)
             if state == BookingStages.COUNT.value:
                 bot.send_message(message.chat.id, "Введите количество гостей.")
@@ -43,8 +43,7 @@ class TelegramBot(AbstractBot):
         @bot.message_handler(func=lambda message: self.get_current_stage(
             message.chat.id) == BookingStages.COUNT.value)
         def get_count(message):
-            if self.validate_count(message.text):
-                self.add_reservation_attr('count', int(message.text))
+            if self.save_count(message.text):
                 bot.send_message(
                     message.chat.id, "Введите время в формате 00:00.")
                 self.set_stage(message.chat.id, BookingStages.TIME.value)
@@ -55,10 +54,7 @@ class TelegramBot(AbstractBot):
         @bot.message_handler(func=lambda message: self.get_current_stage(
             message.chat.id) == BookingStages.TIME.value)
         def get_time(message):
-            if self.validate_time(message.text):
-                self.add_reservation_attr(
-                    'datetime', self.calculate_date(message.text))
-
+            if self.save_time(message.text):
                 keyboard = types.InlineKeyboardMarkup()
                 key_yes = types.InlineKeyboardButton(text='Да',
                                                      callback_data='yes')
@@ -94,4 +90,4 @@ class Command(BaseCommand):
     help = 'Чат-бот'
 
     def handle(self, *args, **kwargs):
-        return TelegramBot(token=TELEGRAM_TOKEN)
+        TelegramBot(token=TELEGRAM_TOKEN)
