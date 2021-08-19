@@ -14,13 +14,13 @@ class TelegramBot(AbstractBot):
         @bot.message_handler(func=lambda message: self.get_current_stage(
             message.chat.id) == BookingStages.START.value)
         def text_start(message):
-            self.save_profile(message.chat.id)
             bot.send_message(
                 message.chat.id, "Для бронирования введите /start")
             self.set_stage(message.chat.id, BookingStages.COUNT.value)
 
         @bot.message_handler(commands=["start"])
         def cmd_start(message):
+            self.save_profile(message.chat.id)
             state = self.get_current_stage(message.chat.id)
             if state == BookingStages.COUNT.value:
                 bot.send_message(message.chat.id, "Введите количество гостей.")
@@ -35,7 +35,6 @@ class TelegramBot(AbstractBot):
 
         @bot.message_handler(commands=["reset"])
         def cmd_reset(message):
-            self.save_profile(message.chat.id)
             bot.send_message(
                 message.chat.id, "Начнем по новой, введите количество гостей.")
             self.set_stage(message.chat.id, BookingStages.COUNT.value)
